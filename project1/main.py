@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import requests
 import math
-
+import utils
 # libraray to write python files to excel
 import xlsxwriter
 
@@ -24,34 +24,16 @@ def createData(fname):
     column_headers = ['Ticker', 'Price','Market Capitalization', 'Number Of Shares to Buy']
 
     # data frame for final output file
-    final_output = pd.DataFrame(columns = column_headers)
-
-    # for symbol in stocks['Ticker']:
-    #     # base url + endpoint that contains marketcap and price
-    #     api_url = f'https://sandbox.iexapis.com/stable/stock/{symbol}/quote?token={IEX_CLOUD_API_TOKEN}'
-
-    #     # get request from the url in the form of json data and store in data
-    #     data = requests.get(api_url).json()
-
-    #     # Append to final data frame 
-    #     # Values in order :
-    #     # Symbol (ticker) read from out csv file
-    #     # Price - the latestPrice in json data
-    #     # Market Cap - the marketCap variable in the json data
-    #     # Number Of Shares to Buy - to be caluclated so set it to N/A
-    #     final_output = final_output.append(pd.Series([symbol, 
-    #                                                 data['latestPrice'], 
-    #                                                 data['marketCap'], 
-    #                                                 'N/A'], 
-    #                                                 index = column_headers), 
-    #                                         ignore_index = True)
-
-    return stocks, column_headers, final_output
+    output_dataframe = pd.DataFrame(columns = column_headers)
+    return stocks, column_headers, output_dataframe
+# -------------------------------------------------------------------------------------------------------------------------------------
 
 def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
+
+# -------------------------------------------------------------------------------------------------------------------------------------
 
 # create the api call
 def callAPI(stocks, col_heads , output_dataframe, base_url, end_point):
@@ -89,30 +71,63 @@ def callAPI(stocks, col_heads , output_dataframe, base_url, end_point):
                                                     index = col_heads), 
                                             ignore_index = True)
             except KeyError:
-                # print("Stock ",symbol," not available")
                 continue
             
-    return output_dataframe.head
-    
-def calculateShares():
-    ...
+    return output_dataframe
+
+# -------------------------------------------------------------------------------------------------------------------------------------  
+def calculateShares(portfolio_size, output_dataframe):
+    '''Number of shares of each stock to buy'''
+
+    # Divide amount equally among the numberr of shares(equally weighted shares)
+    position_size = float(portfolio_size) / len(output_dataframe.index)
+
+    # Calculate number of shares depending on share price
+    for i in range(0, len(output_dataframe['Ticker'])-1):
+        output_dataframe.loc[i, 'Number Of Shares to Buy'] = math.floor(position_size / output_dataframe['Price'][i])
+
+    return output_dataframe
+
+# -------------------------------------------------------------------------------------------------------------------------------------  
+
 
 
 def main():
     ''' Main Function'''
 
+    # File containing name of stock tickers
     fname = 'project1/sp_500_stocks.csv'
 
+    # Create an empty output dataframe
     stocks, column_heads,output =  createData(fname)
 
     base_url = 'https://sandbox.iexapis.com/stable'
     end_point = '/stock/market/batch/?types=quote&symbols'
 
-    output_api = callAPI(stocks, column_heads,output, base_url, end_point)
-    print(output_api)
-
-
-
-
+    # Add API data to created output data frame
+    output = callAPI(stocks, column_heads,output, base_url, end_point)
+    
+    print("-------------------------------------------------------------------")
+    print("                  EQUAL WEIGHT S&P 500                             ")
+    print("-------------------------------------------------------------------")
+    # Take portfolio size as input from the user
+    portfolio_size = 0
+    while True:
+        portfolio_size = input("Enter the value of your portfolio:\n")
+        try:
+            val = float(portfolio_size)
+            break
+        except ValueError:
+            print("This is not a number. Please enter a valid number")
+            portfolio_size = input("Enter the value of your portfolio:")
+            
+    print("Creating Portfolio ... \n")
+    # Calculate number of shares and append to data frame
+    output = calculateShares(portfolio_size, output)
+    
+    # save to excel
+    print("Portfolio Created ! \n")
+    utils.savetoExcel(output)
+    print("Your output is ready! Check the xlsx file generated ")
 if __name__=='__main__':
     main()
