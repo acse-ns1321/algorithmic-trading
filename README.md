@@ -23,6 +23,8 @@ A python program to build an investing strategy that selects the 50 stocks with 
 
 
 User Interface : \
+<img width="245" alt="hqm" src="https://user-images.githubusercontent.com/88569855/162768806-fb66e4ab-2ad3-4f38-ab61-de1be04b01aa.png">
 
 
 Output Files : \
+<img width="457" alt="image" src="https://user-images.githubusercontent.com/88569855/162768787-f278c564-7f95-41e6-af55-686626627379.png">
