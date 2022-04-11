@@ -20,3 +20,9 @@ Output Files : \
 
 ## Project 2 : Quantitative Momentum Strategy
 A python program to build an investing strategy that selects the 50 stocks with the highest price momentum. Subsequently we calculate recommended trades for an equal weighted portfolio of these 50 stocks
+
+
+User Interface : \
+
+
+Output Files : \
