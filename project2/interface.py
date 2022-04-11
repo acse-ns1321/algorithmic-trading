@@ -29,6 +29,7 @@ def beginTrade():
 
     print("Building a high quality momentum strategy ...\n")
     hqm_dataframe = momentum_strategy.calulatePercentiles(hqm_dataframe)
+    hqm_dataframe = momentum_strategy.calculateHQMScore(hqm_dataframe)
     print("------------------------------------------------------------")
 
     # Specify the number of stocks you want to invest in

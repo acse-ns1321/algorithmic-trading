@@ -27,4 +27,3 @@ User Interface : \
 
 
 Output Files : \
-<img width="457" alt="image" src="https://user-images.githubusercontent.com/88569855/162768787-f278c564-7f95-41e6-af55-686626627379.png">

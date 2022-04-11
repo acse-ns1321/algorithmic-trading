@@ -151,9 +151,10 @@ def calculateHQMScore(hqm_dataframe):
         for time_period in time_periods:
             # Append the percentiles of different time periods to the momumtum_percentiles list
             momentum_percentiles.append(hqm_dataframe.loc[row, f'{time_period} Return Percentile'], )
+        
         # Calculate the mean of the momentum percentiles
         hqm_dataframe.loc[row, 'HQM Score'] = mean(momentum_percentiles)
-    
+
     return hqm_dataframe
 
 def selectTopStocks(n,hqm_dataframe):
@@ -161,10 +162,8 @@ def selectTopStocks(n,hqm_dataframe):
     Select the best stocks based on the number of stocks you want 
     to invest in
     '''
-    pd.DataFrame(hqm_dataframe)
     # Sort the hqm_dataframe in  descending order to get the best performing stocks 
-    hqm_dataframe.sort_values(by = 'HQM Score', ascending = False)
-
+    hqm_dataframe.sort_values(by = 'HQM Score', ascending = False, inplace = True)
     # Select the n nest stocks
     hqm_dataframe = hqm_dataframe[:int(n)+1]
 
@@ -173,7 +172,8 @@ def selectTopStocks(n,hqm_dataframe):
 # -------------------------------------------------------------------------------
 def calculateShares(hqm_dataframe):
     ''' Function to calculate total number of shares'''
-    pd.DataFrame(hqm_dataframe)
+
+    hqm_dataframe = hqm_dataframe.reset_index()
     # Find the postition size for the equally weighted portfolio strategy
     position_size = float(portfolio_size)/len(hqm_dataframe.index)
 
@@ -186,7 +186,7 @@ def calculateShares(hqm_dataframe):
 # -------------------------------------------------------------------------------
 def executeStrategy(hqm_dataframe):
     ''' Generate results based on the strategy '''
-    pd.DataFrame(hqm_dataframe)
+
     utils.savetoExcel(hqm_dataframe)
 
 
