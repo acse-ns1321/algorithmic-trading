@@ -73,7 +73,7 @@ def callAPI(stocks):
         symbol_strings.append(','.join(symbol_groups[i]))
 
     
-    for symbol_string in symbol_strings[:1]:
+    for symbol_string in symbol_strings:
         # The URL for the batch api call in f string format
         batch_url = f'https://sandbox.iexapis.com/stable/stock/market/batch/?types=stats,quote&symbols={symbol_string}&token={IEX_CLOUD_API_TOKEN}'
         

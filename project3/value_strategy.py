@@ -55,10 +55,7 @@ def callAPI(stocks):
     'EV/EBITDA Percentile',
     'EV/GP',
     'EV/GP Percentile',
-    'RV Score'
-]
-
-
+    'RV Score']
 
     # Create the value strategy data frame with the new columns
     value_dataframe = pd.DataFrame(columns= value_columns)
@@ -74,59 +71,59 @@ def callAPI(stocks):
         symbol_strings.append(','.join(symbol_groups[i]))
 
     
-    for symbol_string in symbol_strings[:1]:
+    for symbol_string in symbol_strings:
         # The URL for the batch api call in f string format
-        batch_url = f'https://sandbox.iexapis.com/stable/stock/market/batch/?types=stats,quote&symbols={symbol_string}&token={IEX_CLOUD_API_TOKEN}'
+        batch_url = f'https://sandbox.iexapis.com/stable/stock/market/batch?symbols={symbol_string}&types=quote,advanced-stats&token={IEX_CLOUD_API_TOKEN}'
         
         # Make a batch API Call and store the information in a data variable 
         # Convert it to json format from requests format
         data = requests.get(batch_url).json()
         # pprint(data)
-
-
         # Append the batch data to individul columns of the row
         for symbol in symbol_string.split(','):
-             
-            # P/E Ratio
-            pe_ratio = data[symbol]['quote']['peRatio']
+            try:
+                enterprise_value = data[symbol]['advanced-stats']['enterpriseValue']
+                ebitda = data[symbol]['advanced-stats']['EBITDA']
+                gross_profit = data[symbol]['advanced-stats']['grossProfit']
+            except KeyError:
+                enterprise_value = np.NaN
+                ebitda = np.NaN
+                gross_profit = np.NaN
 
-            # P/B Ratio
-            pb_ratio = data[symbol]['advanced-stats']['priceToBook']
-
-            #P/S Ratio
-            ps_ratio = data[symbol]['advanced-stats']['priceToSales']
-
-            # EV/EBITDA
-            enterprise_value = data[symbol]['advanced-stats']['enterpriseValue']
-            ebitda = data[symbol]['advanced-stats']['EBITDA']
+            
+        try:
             ev_to_ebitda = enterprise_value/ebitda
-
-            # EV/GP
-            gross_profit = data[symbol]['advanced-stats']['grossProfit']
+        except TypeError:
+            ev_to_ebitda = np.NaN
+        
+        try:
             ev_to_gross_profit = enterprise_value/gross_profit
+        except TypeError:
+            ev_to_gross_profit = np.NaN
 
-
-            value_dataframe = value_dataframe.append(
-                pd.Series([
-                         symbol,
-                data[symbol]['quote']['latestPrice'],
-                'N/A',
-                data[symbol]['quote']['peRatio'],
-                'N/A',
-                data[symbol]['advanced-stats']['priceToBook'],
-                'N/A',
-                data[symbol]['advanced-stats']['priceToSales'],
-                'N/A',
-                ev_to_ebitda,
-                'N/A',
-                ev_to_gross_profit,
-                'N/A',
-                'N/A'
-                        ],
-                        index = value_columns),
-            ignore_index= True           
-            )
-
+        value_dataframe = value_dataframe.append(
+            pd.Series([
+                    symbol,
+                    data[symbol]['quote']['latestPrice'],
+                    'N/A',
+                    data[symbol]['quote']['peRatio'],
+                    'N/A',
+                    data[symbol]['advanced-stats']['priceToBook'],
+                    'N/A',
+                    data[symbol]['advanced-stats']['priceToSales'],
+                    'N/A',
+                    ev_to_ebitda,
+                    'N/A',
+                    ev_to_gross_profit,
+                    'N/A',
+                    'N/A'
+                    ],
+                    index = value_columns),
+        ignore_index= True           
+        )
+    # for column in ['Price-to-Earnings Ratio', 'Price-to-Book Ratio','Price-to-Sales Ratio',  'EV/EBITDA','EV/GP']:
+    #     value_dataframe[column].fillna(value_dataframe[column].mean(), inplace = True)
+    # print(value_dataframe)       
     return value_dataframe
 
 
@@ -150,7 +147,7 @@ def calulatePercentiles(value_dataframe):
         for metric in metrics.keys():
             value_dataframe.loc[row, metrics[metric]] = stats.percentileofscore(value_dataframe[metric], value_dataframe.loc[row, metric])/100
 
-    # # Print each percentile score to make sure it was calculated properly
+    # Print each percentile score to make sure it was calculated properly
     # for metric in metrics.values():
     #     print(value_dataframe[metric])
 
@@ -158,7 +155,7 @@ def calulatePercentiles(value_dataframe):
     return value_dataframe, metrics
 # -------------------------------------------------------------------------------
 def calculateScore(value_dataframe, metrics):
-    ''' The `HQM Score` will be the arithmetic mean of the 4 momentum 
+    ''' The `RV Score` will be the arithmetic mean of the 4 momentum 
     percentile scores that we calculated'''
     pd.DataFrame(value_dataframe)
     for row in value_dataframe.index:
@@ -166,7 +163,7 @@ def calculateScore(value_dataframe, metrics):
         for metric in metrics.keys():
             value_percentiles.append(value_dataframe.loc[row, metrics[metric]])
         value_dataframe.loc[row, 'RV Score'] = mean(value_percentiles)
-    
+    print(value_dataframe)
     return value_dataframe
 
 #--------------------------------------------------------------------------------------------- 
@@ -177,13 +174,13 @@ def selectTopStocks(n,value_dataframe):
     to invest in and remove the glamour stocks
     '''
     # Sort the value_dataframe in  descending order to get the best performing stocks 
-    value_dataframe.sort_values('Price-to-Earnings Ratio', inplace = True)
-
-    # Remove glamour stocks
-    value_dataframe = value_dataframe[value_dataframe['Price-to-Earnings Ratio'] > 0]
+    value_dataframe.sort_values('RV Score', inplace = True)
 
     # Select the n best stocks
     value_dataframe = value_dataframe[:int(n)+1]
+
+    # reset index and drop dataframe
+    value_dataframe.reset_index(drop = True, inplace = True)
 
     return value_dataframe
 
